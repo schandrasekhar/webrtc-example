@@ -1,6 +1,8 @@
 # Realtime communication with WebRTC
+A sample webrtc app based on web browser. Currently only peer connections are working. Work is in progress to support peerConnections via TURN server.
 
-This is a work in progress.
+## How does it work
+Signalling is done using socket.io javascript library. After the clients will connect directly to each other.
 
 ## Setup
 `cd webrtc-example; npm install`

@@ -42,11 +42,8 @@ const peerConnectionMap = {};
  
 /////////////////////////////////////////////
 //const room = window.prompt(message, "foo");
-var room = 'foo';
-// Could prompt for room name:
-// room = prompt('Enter room name:');
- 
-var socket = io.connect();
+const room = 'foo';
+const socket = io.connect();
 
 if (room !== '') {
   socket.emit('create or join', room);
@@ -365,7 +362,6 @@ function handleRemoteStreamRemoved(message) {
 
 function hangup() {
   console.log('Hanging up.');
-  //stop();
   sendMessage({
     uniqueId: id,
     payload: {
