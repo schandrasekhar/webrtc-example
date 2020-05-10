@@ -1,0 +1,18 @@
+body {
+  font-family: sans-serif;
+}
+  
+video {
+  max-width: 100%;
+  width: 320px;
+}
+
+#videos {
+  text-align: center;
+}
+
+.video {
+  padding: 20px;
+  padding-bottom: 5px;
+}
+  
