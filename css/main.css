@@ -23,4 +23,8 @@ video {
 .video {
   padding: 20px;
 }
+
+.video.local {
+  width: 250px;
+}
   

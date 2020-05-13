@@ -42,12 +42,20 @@ const peerConnectionMap = {};
  
 /////////////////////////////////////////////
 //const room = window.prompt(message, "foo");
-const room = 'foo';
+let room;
+if (window.location.hash.length > 0) {
+  room = window.location.hash.replace("#", "");
+} else {
+  room = "room-number-" + Date.now();
+  window.location.hash = room;
+}
 const name = window.prompt("Enter a name", "test-user-" + Date.now());
 const socket = io.connect();
 
 if (room !== '') {
-  socket.emit('create or join', room);
+  socket.emit('create or join', {
+    room: room
+  });
   console.debug('Attempted to create or  join room', room);
 }
 
@@ -71,9 +79,9 @@ socket.on('full', function(room) {
 //   isChannelReady = true;
 // });
 
-socket.on('log', function(array) {
-  console.debug("custom log");
-});
+// socket.on('log', function(array) {
+//   console.debug("custom log");
+// });
 
 socket.on('chat_message', function(message) {
     const chatMessage = message.payload.data;
@@ -88,6 +96,7 @@ chatButton.onclick = function() {
   const textAreaElement = document.getElementById("chat-input");
   const textValue =  textAreaElement.value;
   socket.emit("chat_message", {
+    room: room,
     uniqueId: id,
     payload: {
       data: textValue
@@ -135,7 +144,7 @@ socket.on('message', function(message) {
   if (!peerConnectionMap[message.uniqueId]) {
     peerConnectionMap[message.uniqueId] = {};
   }
-  if (message.payload.type === 'got user media') {
+  if (message.payload.type === 'got user media' && message.uniqueId !== id) {
     console.log('Client received message:', id, message.uniqueId, message.payload.type);
     const peerConnection = maybeStart(message);
     peerConnectionMap[message.uniqueId]["peerConnection"] = peerConnection;
@@ -162,7 +171,7 @@ socket.on('message', function(message) {
       peerConnection.addIceCandidate(candidate);
     }
   }
-  if (message.payload.type === 'bye' && isStarted) {
+  if (message.payload.type === 'bye' && isStarted && message.uniqueId !== id) {
     peerConnectionMap[message.uniqueId]["peerConnection"].close();
     delete peerConnectionMap[message.uniqueId];
     const childNodes = videosElement.childNodes;  
@@ -204,6 +213,7 @@ const getVideoElement = function(videoStream, type, message) {
   }
   if (type === "local") {
     videoElement.muted = true;
+    videoElement.className = videoElement.className + " local";
     videoElement.setAttribute("data-attribute-uniqueid", id);
     containerElement.setAttribute("data-attribute-uniqueid", id);
   }
@@ -217,6 +227,7 @@ const getVideoElement = function(videoStream, type, message) {
     hangupButton.innerText = "Hang up";
     hangupButton.onclick = function() {
       sendMessage({
+        room: room,
         uniqueId: id,
         payload: {
           type: "bye"
@@ -294,6 +305,7 @@ function gotStream(stream) {
   });
 
   sendMessage({
+    room: room,
     uniqueId: id,
     payload: {
       type: "got user media"
@@ -321,6 +333,7 @@ function maybeStart(message) {
 
 window.onbeforeunload = function() {
   sendMessage({
+    room: room,
     uniqueId: id,
     payload: {
       type: "bye"
@@ -352,6 +365,7 @@ function handleIceCandidate(message) {
   const func = function(event) {
     if (event.candidate) {
       sendMessage({
+        room: room,
         uniqueId: id,
         toAddress: message.uniqueId,
         payload: {
@@ -390,6 +404,7 @@ function setLocalAndSendMessage(peerConnection, message) {
     peerConnection.setLocalDescription(sessionDescription);
     console.log('setLocalAndSendMessage sending message', sessionDescription);
     sendMessage({
+      room: room,
       uniqueId: id,
       toAddress: message.uniqueId,
       payload: sessionDescription
@@ -426,6 +441,7 @@ function handleRemoteStreamRemoved(message) {
 function hangup() {
   console.log('Hanging up.');
   sendMessage({
+    room: room,
     uniqueId: id,
     payload: {
       type: "bye"
