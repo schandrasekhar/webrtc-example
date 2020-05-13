@@ -43,6 +43,7 @@ const peerConnectionMap = {};
 /////////////////////////////////////////////
 //const room = window.prompt(message, "foo");
 const room = 'foo';
+const name = window.prompt("Enter a name", "test-user-" + Date.now());
 const socket = io.connect();
 
 if (room !== '') {
@@ -96,6 +97,14 @@ chatButton.onclick = function() {
   const preElement = document.createElement("PRE");
   preElement.innerText = textValue;
   chatConsoleElement.appendChild(preElement);
+  textAreaElement.value = "";
+};
+document.getElementById("chat-input").onkeydown = function (event) {
+  var keypressed = event.keyCode || event.which;
+  if (keypressed == 13 && !event.shiftKey) {
+    document.getElementById("chat-submit").click();
+    event.preventDefault();
+  }
 };
 
 socket.on('connect_error', function(err) {
@@ -180,6 +189,7 @@ navigator.mediaDevices.getUserMedia({
 
 const getVideoElement = function(videoStream, type, message) {
   const containerElement = document.createElement("DIV");
+  containerElement.className = "video-container";
   const videoElement = document.createElement("VIDEO");
   videoElement.setAttribute("autoplay", true);
   if (shouldMute) {
@@ -187,6 +197,7 @@ const getVideoElement = function(videoStream, type, message) {
   }
   videoElement.className = "video";
   if (type === "remote") {
+    videoElement.controls = true;
     videoElement.className = videoElement.className + " remote";
     videoElement.setAttribute("data-attribute-uniqueid", message.uniqueId);
     containerElement.setAttribute("data-attribute-uniqueid", message.uniqueId);
@@ -200,10 +211,11 @@ const getVideoElement = function(videoStream, type, message) {
   containerElement.appendChild(videoElement);
 
   if (type === "local") {
+    //hangup button
     const buttonContainer = document.createElement("DIV");
-    const buttonElement = document.createElement("BUTTON");
-    buttonElement.innerText = "Hangup";
-    buttonElement.onclick = function() {
+    const hangupButton = document.createElement("BUTTON");
+    hangupButton.innerText = "Hang up";
+    hangupButton.onclick = function() {
       sendMessage({
         uniqueId: id,
         payload: {
@@ -214,7 +226,58 @@ const getVideoElement = function(videoStream, type, message) {
         videosElement.removeChild(videosElement.lastElementChild);
       }
     };
-    buttonContainer.appendChild(buttonElement);
+
+    const toggleAudioButton  = document.createElement("BUTTON");
+    toggleAudioButton.innerText = "Disable Audio";
+    let audioEnabled = true;
+    toggleAudioButton.onclick = function() {
+      if (videoElement.srcObject) {
+        const audioTracks = videoElement.srcObject.getAudioTracks();
+        if (audioTracks) {
+          audioTracks.forEach(function(audioTrack) {
+            audioTrack.enabled = !audioTrack.enabled;
+          });
+          audioEnabled = !audioEnabled;
+          if (audioEnabled) {
+            toggleAudioButton.innerText = "Disable Audio";
+          } else {
+            toggleAudioButton.innerText = "Enable Audio";
+          }
+        } else {
+          window.alert("Cannot toggle audio. No audio tracks found in local stream. Are you connected?");
+        }
+      } else {
+        window.alert("Cannot toggle audio. No local audio stream found. Are you connected?");
+      }
+    };
+
+    const toggleVideoButton  = document.createElement("BUTTON");
+    toggleVideoButton.innerText = "Disable Video";
+    let videoEnabled = true;
+    toggleVideoButton.onclick = function() {
+      if (videoElement.srcObject) {
+        const videoTracks = videoElement.srcObject.getVideoTracks();
+        if (videoTracks) {
+          videoTracks.forEach(function(videoTrack) {
+            videoTrack.enabled = !videoTrack.enabled;
+          });
+          videoEnabled = !videoEnabled;
+          if (videoEnabled) {
+            toggleVideoButton.innerText = "Disable Video";
+          } else {
+            toggleVideoButton.innerText = "Enable Video";
+          }
+        } else {
+          window.alert("Cannot toggle video. No video tracks found in local stream. Are you connected?");
+        }
+      } else {
+        window.alert("Cannot toggle video. No local video stream found. Are you connected?");
+      }
+    };
+
+    buttonContainer.appendChild(hangupButton);
+    buttonContainer.appendChild(toggleAudioButton);
+    buttonContainer.appendChild(toggleVideoButton);
     containerElement.appendChild(buttonContainer);
   }
   return containerElement;
